@@ -116,7 +116,15 @@ const MediaPreview = ({ mediaFiles, isLoading }) => {
                 <div className="media-preview">
                   {file.type === 'image' ? (
                     <div className="image-preview">
-                      <div className="fallback-preview">
+                      <img 
+                        src={file.downloadUrl || file.originalUrl} 
+                        alt={file.filename}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="fallback-preview" style={{ display: 'none' }}>
                         <FaImage />
                         <span>Image Preview</span>
                         <small>Click download to view</small>
@@ -124,7 +132,18 @@ const MediaPreview = ({ mediaFiles, isLoading }) => {
                     </div>
                   ) : (
                     <div className="video-preview">
-                      <div className="fallback-preview">
+                      <video 
+                        src={file.downloadUrl || file.originalUrl}
+                        muted
+                        loop
+                        onMouseEnter={(e) => e.target.play()}
+                        onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="fallback-preview" style={{ display: 'none' }}>
                         <FaVideo />
                         <span>Video Preview</span>
                         <small>Click download to view</small>
