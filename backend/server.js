@@ -11,11 +11,14 @@ app.use(express.json());
 
 // Import API handlers
 const downloadHandler = require('../api/download.js');
+const proxyDownloadHandler = require('../api/proxy-download.js');
 const healthHandler = require('../api/health.js');
 const testHandler = require('../api/test.js');
 
 // Convert Vercel serverless functions to Express routes
 app.post('/api/download', downloadHandler);
+
+app.get('/api/proxy-download', proxyDownloadHandler);
 
 app.get('/api/health', healthHandler);
 

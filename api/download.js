@@ -33,7 +33,7 @@ function extractShortcode(url) {
 }
 
 // Process media URLs
-function processMediaUrls(data, shortcode) {
+function processMediaUrls(data, shortcode, originalPostUrl) {
   const mediaFiles = [];
   const timestamp = Date.now();
 
@@ -52,7 +52,9 @@ function processMediaUrls(data, shortcode) {
       contentType: isVideo ? 'video/mp4' : 'image/jpeg',
       downloadUrl: mediaUrl,
       dimensions: mediaDetail?.dimensions,
-      originalUrl: mediaUrl
+      originalUrl: mediaUrl,
+      postUrl: originalPostUrl, // Store original post URL for fresh fetching
+      index: i // Store index for fetching correct media
     });
   }
   return mediaFiles;
@@ -75,7 +77,7 @@ async function downloadInstagramMedia(url) {
     }
 
     console.log(`📊 Found ${data.results_number} media files`);
-    const mediaFiles = processMediaUrls(data, shortcode);
+    const mediaFiles = processMediaUrls(data, shortcode, url);
     
     if (mediaFiles.length === 0) {
       return { error: 'Failed to process any media files', code: 'PROCESSING_FAILED' };

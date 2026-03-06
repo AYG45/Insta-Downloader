@@ -6,36 +6,59 @@ import './MediaPreview.css';
 const MediaPreview = ({ mediaFiles, isLoading }) => {
   const handleDownload = async (file) => {
     try {
-      // Use fetch to get the file as a blob
-      const response = await fetch(file.downloadUrl || file.url);
+      // Debug: log the file object
+      console.log('File object:', file);
+      
+      // Check if we have the required data
+      if (!file.postUrl || file.index === undefined) {
+        console.error('Missing postUrl or index:', file);
+        alert(`Failed to download ${file.filename}. Missing required data. Please try fetching the media again.`);
+        return;
+      }
+
+      // Use proxy with fresh URL fetching to avoid expired URLs
+      const params = new URLSearchParams({
+        postUrl: encodeURIComponent(file.postUrl),
+        filename: encodeURIComponent(file.filename),
+        index: file.index.toString()
+      });
+      
+      const proxyUrl = `/api/proxy-download?${params.toString()}`;
+      
+      console.log(`Downloading ${file.filename} via proxy...`);
+      console.log(`Proxy URL: ${proxyUrl}`);
+      
+      // Try to fetch first to check for errors
+      const response = await fetch(proxyUrl);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Download failed:', errorData);
+        alert(`Failed to download: ${errorData.error || 'Unknown error'}`);
+        return;
       }
       
+      // If successful, trigger download
       const blob = await response.blob();
-      
-      // Create a blob URL and trigger download
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = file.filename;
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      // Clean up the blob URL
-      window.URL.revokeObjectURL(blobUrl);
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+      
+      console.log(`✅ Successfully downloaded: ${file.filename}`);
+      
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback to direct link
-      const link = document.createElement('a');
-      link.href = file.downloadUrl || file.url;
-      link.download = file.filename;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      alert(`Failed to download ${file.filename}. Error: ${error.message}`);
     }
   };
 
@@ -116,37 +139,18 @@ const MediaPreview = ({ mediaFiles, isLoading }) => {
                 <div className="media-preview">
                   {file.type === 'image' ? (
                     <div className="image-preview">
-                      <img 
-                        src={file.downloadUrl || file.originalUrl} 
-                        alt={file.filename}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div className="fallback-preview" style={{ display: 'none' }}>
+                      <div className="fallback-preview">
                         <FaImage />
-                        <span>Image Preview</span>
-                        <small>Click download to view</small>
+                        <span>Image Ready</span>
+                        <small>Click download button</small>
                       </div>
                     </div>
                   ) : (
                     <div className="video-preview">
-                      <video 
-                        src={file.downloadUrl || file.originalUrl}
-                        muted
-                        loop
-                        onMouseEnter={(e) => e.target.play()}
-                        onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                      <div className="fallback-preview" style={{ display: 'none' }}>
+                      <div className="fallback-preview">
                         <FaVideo />
-                        <span>Video Preview</span>
-                        <small>Click download to view</small>
+                        <span>Video Ready</span>
+                        <small>Click download button</small>
                       </div>
                     </div>
                   )}
